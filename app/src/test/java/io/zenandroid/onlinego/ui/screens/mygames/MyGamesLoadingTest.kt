@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import io.zenandroid.onlinego.data.model.local.Game
 import io.zenandroid.onlinego.data.model.ogs.Phase
 import io.zenandroid.onlinego.data.model.ogs.Warning
+import io.zenandroid.onlinego.data.ogs.ConnectionStatus
 import io.zenandroid.onlinego.data.ogs.OGSRestService
 import io.zenandroid.onlinego.data.ogs.OGSWebSocketService
 import io.zenandroid.onlinego.data.repositories.ActiveGamesRepository
@@ -12,6 +13,7 @@ import io.zenandroid.onlinego.data.repositories.ChallengesRepository
 import io.zenandroid.onlinego.data.repositories.ChatRepository
 import io.zenandroid.onlinego.data.repositories.FinishedGamesRepository
 import io.zenandroid.onlinego.data.repositories.LoginStatus
+import io.zenandroid.onlinego.data.repositories.GameSyncState
 import io.zenandroid.onlinego.data.repositories.ServerNotificationsRepository
 import io.zenandroid.onlinego.data.repositories.SettingsRepository
 import io.zenandroid.onlinego.data.repositories.TutorialsRepository
@@ -67,7 +69,8 @@ class MyGamesLoadingTest {
     whenever(challenges.monitorChallenges()).thenReturn(emptyFlow())
     whenever(automatches.automatchFlow).thenReturn(MutableStateFlow(persistentListOf()))
     whenever(automatches.gameStartFlow).thenReturn(MutableSharedFlow())
-    whenever(socket.connectionState).thenReturn(MutableStateFlow(false))
+    whenever(socket.connectionStatus).thenReturn(MutableStateFlow(ConnectionStatus.Disconnected))
+    whenever(active.syncState).thenReturn(MutableStateFlow(GameSyncState()))
     whenever(notifications.notificationsFlow()).thenReturn(emptyFlow())
     whenever(settings.showRanksFlow).thenReturn(flowOf(true))
     whenever(rest.checkForWarnings()).thenReturn(Warning())

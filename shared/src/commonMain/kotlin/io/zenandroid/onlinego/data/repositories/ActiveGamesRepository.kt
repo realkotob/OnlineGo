@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
@@ -60,6 +61,8 @@ class ActiveGamesRepository(
 ) : SocketConnectedRepository {
 
   private val activeGamesRefresh = SingleFlight<Unit>()
+  private val _syncState = MutableStateFlow(GameSyncState())
+  val syncState = _syncState.asStateFlow()
 
   private val gameConnections = AtomicReference(persistentSetOf<Long>())
   private val trackedConnections = AtomicReference(persistentListOf<GameConnection>())
@@ -344,7 +347,24 @@ class ActiveGamesRepository(
   }
 
   suspend fun refreshActiveGames() = activeGamesRefresh.run {
-    refreshActiveGamesInternal()
+    _syncState.update { it.copy(pendingRefreshes = it.pendingRefreshes + 1) }
+    var succeeded: Boolean? = null
+    try {
+      refreshActiveGamesInternal()
+      succeeded = true
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      succeeded = false
+      throw e
+    } finally {
+      _syncState.update {
+        it.copy(
+          pendingRefreshes = it.pendingRefreshes - 1,
+          lastRefreshSucceeded = succeeded ?: it.lastRefreshSucceeded,
+        )
+      }
+    }
   }
 
   private suspend fun refreshActiveGamesInternal() {
