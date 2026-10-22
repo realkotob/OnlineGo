@@ -192,4 +192,6 @@ dependencies {
 
   // Android Testing
   androidTestImplementation(libs.bundles.android.testing)
+  androidTestImplementation(kotlin("test-junit"))
+  androidTestImplementation(libs.coroutines.test)
 }

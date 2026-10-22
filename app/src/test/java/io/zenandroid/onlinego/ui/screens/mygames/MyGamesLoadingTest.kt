@@ -54,6 +54,7 @@ class MyGamesLoadingTest {
   private val notifications: ServerNotificationsRepository = mock()
   private val settings: SettingsRepository = mock()
   private val rest: OGSRestService = mock()
+  private val whatsNew: WhatsNewUtils = mock()
   private val activeGames = MutableStateFlow<List<Game>>(emptyList())
   private val loginStatus = MutableSharedFlow<LoginStatus>(replay = 1)
   private lateinit var viewModel: MyGamesViewModel
@@ -74,10 +75,12 @@ class MyGamesLoadingTest {
     whenever(notifications.notificationsFlow()).thenReturn(emptyFlow())
     whenever(settings.showRanksFlow).thenReturn(flowOf(true))
     whenever(rest.checkForWarnings()).thenReturn(Warning())
+    whenever(whatsNew.shouldDisplayDialog()).thenReturn(false)
+    whenever(whatsNew.textShown()).thenReturn(Unit)
     viewModel = MyGamesViewModel(
       session, finished, active, challenges, automatches, mock<ChatRepository>(),
       notifications, mock<TutorialsRepository>(), mock<Analytics>(), rest, socket,
-      settings, mock<WhatsNewUtils>(),
+      settings, whatsNew,
     )
   }
 

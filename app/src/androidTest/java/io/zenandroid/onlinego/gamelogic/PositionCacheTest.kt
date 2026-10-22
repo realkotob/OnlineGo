@@ -4,11 +4,14 @@ import io.zenandroid.onlinego.data.model.Cell
 import io.zenandroid.onlinego.data.model.local.Game
 import io.zenandroid.onlinego.data.model.local.InitialState
 import kotlinx.coroutines.test.runTest
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
+@RunWith(AndroidJUnit4::class)
 class PositionCacheTest {
   @Test
   fun clockChatAndPlayerUpdatesReuseTheExistingPosition() = runTest {
