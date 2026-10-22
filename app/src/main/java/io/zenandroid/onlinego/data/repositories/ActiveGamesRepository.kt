@@ -19,6 +19,7 @@ import io.zenandroid.onlinego.data.ogs.UndoRequested
 import io.zenandroid.onlinego.data.ogs.httpErrorBody
 import io.zenandroid.onlinego.data.ogs.httpStatusCode
 import io.zenandroid.onlinego.utils.CrashReporter
+import io.zenandroid.onlinego.utils.SingleFlight
 import io.zenandroid.onlinego.utils.timeLeftForCurrentPlayer
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import java.io.IOException
@@ -56,6 +58,10 @@ class ActiveGamesRepository(
   private val userSessionRepository: UserSessionRepository,
   private val gameDao: GameDao
 ) : SocketConnectedRepository {
+
+  private val activeGamesRefresh = SingleFlight<Unit>()
+  private val _syncState = MutableStateFlow(GameSyncState())
+  val syncState = _syncState.asStateFlow()
 
   private val gameConnections = AtomicReference(persistentSetOf<Long>())
   private val trackedConnections = AtomicReference(persistentListOf<GameConnection>())
@@ -339,7 +345,28 @@ class ActiveGamesRepository(
     }
   }
 
-  suspend fun refreshActiveGames() {
+  suspend fun refreshActiveGames() = activeGamesRefresh.run {
+    _syncState.update { it.copy(pendingRefreshes = it.pendingRefreshes + 1) }
+    var succeeded: Boolean? = null
+    try {
+      refreshActiveGamesInternal()
+      succeeded = true
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      succeeded = false
+      throw e
+    } finally {
+      _syncState.update {
+        it.copy(
+          pendingRefreshes = it.pendingRefreshes - 1,
+          lastRefreshSucceeded = succeeded ?: it.lastRefreshSucceeded,
+        )
+      }
+    }
+  }
+
+  private suspend fun refreshActiveGamesInternal() {
     val userId = userSessionRepository.userId.filterNotNull().first()
     val games = retryOnIOException { restService.fetchActiveGames() }
     val localGames = games.map(Game.Companion::fromOGSGame)

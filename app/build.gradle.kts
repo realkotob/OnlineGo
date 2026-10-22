@@ -24,7 +24,7 @@ android {
     applicationId = "io.zenandroid.onlinego"
     minSdk = libs.versions.minSdk.get().toInt()
     targetSdk = libs.versions.targetSdk.get().toInt()
-    versionCode = 42
+    versionCode = 1026
     versionName = "beta_b${versionCode}"
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     buildConfigField("String", "BASE_URL", "\"https://online-go.com/\"")
@@ -49,6 +49,7 @@ android {
     }
     debug {
       applicationIdSuffix = ".debug"
+      versionNameSuffix = "-startup-fixes"
       manifestPlaceholders["crashlyticsCollectionEnabled"] = false
       manifestPlaceholders["analyticsCollectionEnabled"] = false
     }
@@ -186,6 +187,7 @@ dependencies {
 
   // Unit Testing
   testImplementation(libs.bundles.testing)
+  testImplementation(kotlin("test-junit"))
   testImplementation(libs.ktor.client.mock)
 
   // Android Testing

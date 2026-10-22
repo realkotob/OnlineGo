@@ -6,15 +6,16 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,6 +34,10 @@ import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
 import io.zenandroid.onlinego.R
+import io.zenandroid.onlinego.data.ogs.ConnectionStatus
+import io.zenandroid.onlinego.data.repositories.GameSyncState
+import io.zenandroid.onlinego.ui.screens.mygames.HomeStatusMessage
+import io.zenandroid.onlinego.ui.screens.mygames.homeStatusMessages
 import io.zenandroid.onlinego.ui.theme.OnlineGoTheme
 import io.zenandroid.onlinego.utils.processGravatarURL
 
@@ -48,7 +53,8 @@ fun HomeScreenHeader(
   image: String? = null,
   mainText: String,
   subText: String? = null,
-  offline: Boolean
+  connectionStatus: ConnectionStatus = ConnectionStatus.Connected,
+  gameSyncState: GameSyncState = GameSyncState(),
 ) {
   Row(modifier = Modifier
     .statusBarsPadding()
@@ -70,7 +76,7 @@ fun HomeScreenHeader(
         .clip(RoundedCornerShape(4.dp))
     )
 
-    Column(modifier = Modifier.padding(start = 30.dp)) {
+    Column(modifier = Modifier.weight(1f).padding(start = 20.dp, end = 8.dp)) {
       Text(
         text = mainText,
         fontWeight = FontWeight.Bold,
@@ -86,19 +92,45 @@ fun HomeScreenHeader(
         )
       }
     }
-    Spacer(modifier = Modifier.weight(1f))
+    val messages = homeStatusMessages(connectionStatus, gameSyncState)
     AnimatedVisibility(
-      visible = offline,
+      visible = messages.isNotEmpty(),
       enter = fadeIn(),
       exit = fadeOut(),
       modifier = Modifier.align(Alignment.CenterVertically)
     ) {
-      Image(
-        imageVector = Icons.Default.CloudOff,
-        contentDescription = stringResource(R.string.mygames_offline_content_description),
-        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
-        modifier = Modifier.size(24.dp),
-      )
+      Column(
+        modifier = Modifier.widthIn(max = 100.dp),
+        horizontalAlignment = Alignment.End,
+      ) {
+        messages.forEach { message ->
+          val label = stringResource(when (message) {
+            HomeStatusMessage.Connecting -> R.string.mygames_connecting
+            HomeStatusMessage.Reconnecting -> R.string.mygames_reconnecting
+            HomeStatusMessage.Offline -> R.string.mygames_offline_content_description
+            HomeStatusMessage.RefreshingGames -> R.string.mygames_refreshing_games
+            HomeStatusMessage.RefreshFailed -> R.string.mygames_refresh_failed
+          })
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            if (message == HomeStatusMessage.Offline) {
+              Image(
+                imageVector = Icons.Default.CloudOff,
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+                modifier = Modifier.size(16.dp),
+              )
+            } else if (message != HomeStatusMessage.RefreshFailed) {
+              CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 1.dp)
+            }
+            Text(
+              text = label,
+              fontSize = 11.sp,
+              color = MaterialTheme.colorScheme.onSurface,
+              modifier = Modifier.padding(start = 4.dp),
+            )
+          }
+        }
+      }
     }
   }
 }
@@ -110,7 +142,8 @@ private fun Preview() {
     HomeScreenHeader(
       mainText = "Hi Alex,",
       subText = "It's your turn in 4 games.",
-      offline = true,
+      connectionStatus = ConnectionStatus.Connecting,
+      gameSyncState = GameSyncState(pendingRefreshes = 1),
     )
   }
 }
@@ -122,7 +155,7 @@ private fun Preview1() {
     HomeScreenHeader(
       mainText = "Hi Alex,",
       subText = "It's your turn in 4 games.",
-      offline = false,
+      connectionStatus = ConnectionStatus.Connected,
     )
   }
 }

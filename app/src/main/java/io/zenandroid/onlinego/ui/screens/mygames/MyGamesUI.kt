@@ -41,6 +41,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.zenandroid.onlinego.R
+import io.zenandroid.onlinego.data.ogs.ConnectionStatus
+import io.zenandroid.onlinego.data.repositories.GameSyncState
 import io.zenandroid.onlinego.data.model.local.Challenge
 import io.zenandroid.onlinego.data.model.local.Game
 import io.zenandroid.onlinego.data.model.local.Player
@@ -225,7 +227,8 @@ fun MyGamesContent(
 
           else -> stringResource(R.string.mygames_no_active_games)
         },
-        offline = !state.online,
+        connectionStatus = if (state.userId == null) ConnectionStatus.Connected else state.connectionStatus,
+        gameSyncState = if (state.userId == null) GameSyncState() else state.gameSyncState,
       )
     }
     if (state.tutorialVisible) {
